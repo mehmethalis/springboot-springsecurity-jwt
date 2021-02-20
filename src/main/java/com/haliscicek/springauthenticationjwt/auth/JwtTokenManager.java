@@ -1,6 +1,7 @@
 package com.haliscicek.springauthenticationjwt.auth;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -17,7 +18,7 @@ import java.util.function.Function;
 @Service
 public class JwtTokenManager {
 
-    //return sign key
+
     private Key getSigningKey() {
         return Keys.secretKeyFor(SignatureAlgorithm.HS256);
     }
@@ -31,12 +32,15 @@ public class JwtTokenManager {
     }
 
     public <T> T getClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = getAllClaims(token);
-        return claimsResolver.apply(claims);
+        final Jws<Claims> claims = getAllClaims(token);
+        return claimsResolver.apply((Claims) claims);
     }
 
-    private Claims getAllClaims(String token) {
-        return Jwts.parser().setSigningKey(getSigningKey()).parseClaimsJws(token).getBody();
+    private Jws<Claims> getAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token);
     }
 
     private Boolean isExpired(String token) {
