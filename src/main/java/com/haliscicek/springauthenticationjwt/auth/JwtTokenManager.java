@@ -1,10 +1,8 @@
 package com.haliscicek.springauthenticationjwt.auth;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -18,9 +16,10 @@ import java.util.function.Function;
 @Service
 public class JwtTokenManager {
 
+    private final Key key;
 
-    private Key getSigningKey() {
-        return Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    public JwtTokenManager() {
+        this.key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     }
 
     public String getUserName(String token) {
@@ -32,15 +31,15 @@ public class JwtTokenManager {
     }
 
     public <T> T getClaim(String token, Function<Claims, T> claimsResolver) {
-        final Jws<Claims> claims = getAllClaims(token);
+        final Claims claims = getAllClaims(token);
         return claimsResolver.apply((Claims) claims);
     }
 
-    private Jws<Claims> getAllClaims(String token) {
+    private Claims getAllClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+                .setSigningKey(this.key)
                 .build()
-                .parseClaimsJws(token);
+                .parseClaimsJws(token).getBody();
     }
 
     private Boolean isExpired(String token) {
@@ -58,7 +57,7 @@ public class JwtTokenManager {
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
-                .signWith(getSigningKey())
+                .signWith(this.key)
                 .compact();
     }
 
